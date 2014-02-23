@@ -540,6 +540,7 @@ var requireRegExp = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
 
 
 var ace = {
+  author: 'zmike86',
   version : '0.1',
   /**
    * require function
