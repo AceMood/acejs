@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title> New Document </title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="../../lib/qunit.css" />
+</head>
+<body>
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+<script src="../../lib/qunit.js"></script>
+<script type="text/javascript">
+  asyncTest( "asynchronous test: one second later!", function() {
+    expect( 1 );
+
+    setTimeout(function() {
+      ok( true, "Passed and ready to resume!" );
+      start();
+    }, 1000);
+
+  });
+
+</script>
+</body>
+</html>

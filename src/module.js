@@ -93,7 +93,7 @@ Module.prototype = {
     var requireModules = [];
     // resolve txt-format source code
     this.code = code.replace(commentRegExp, '')
-      .replace(requireRegExp, function (match, moduleName) {
+      .replace(requireRegExp, function (match, quote, moduleName) {
         requireModules.push(id2url(moduleName, self.id));
         return match
       });

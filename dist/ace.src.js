@@ -449,7 +449,7 @@ Module.prototype = {
     var requireModules = [];
     // resolve txt-format source code
     this.code = code.replace(commentRegExp, '')
-      .replace(requireRegExp, function (match, moduleName) {
+      .replace(requireRegExp, function (match, quote, moduleName) {
         requireModules.push(id2url(moduleName, self.id));
         return match
       });
@@ -535,7 +535,7 @@ var xhrio = {
 
 // A regexp to filter `require('xxx')`
 // A regexp to drop comments in source code
-var requireRegExp = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
+var requireRegExp = /\brequire\s*\(\s*(["'])([^'"\s]+)\1\s*\)/g,
     commentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
 
 
