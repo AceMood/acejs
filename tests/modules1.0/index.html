@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link type="text/css" rel="stylesheet" href="../../lib/qunit.css" />
+</head>
+<body>
+<h1 id="qunit-header">AceJS Modules/1.0 Unit Tests</h1>
+<h2 id="qunit-banner"></h2>
+<h2 id="qunit-userAgent"></h2>
+<ol id="qunit-tests"></ol>
+
+<script type="text/javascript" src="../../lib/qunit.js"></script>
+<script type="text/javascript" src="../print.js"></script>
+<script type="text/javascript" src="../test.js"></script>
+<script type="text/javascript" src="reset.js"></script>
+<script type="text/javascript">
+
+  var tests = [
+    ['absolute', 1],
+    ['cyclic', 4]/*,
+     ['determinism', 1],
+     ['exactExports', 1],
+     ['hasOwnProperty', 0],
+     ['method', 3],
+     ['missing', 1],
+     ['monkeys', 1],
+     ['nested', 1],
+     ['relative', 1],
+     ['transitive', 1]*/
+  ];
+
+  for (var i = 0, n = tests.length; i < n; i++) {
+    var testName = tests[i][0],
+      expected = tests[i][1];
+    test(testName, (function(testName) {
+      return function() {
+        stop();
+        reset();
+        addNewTest("tests/" + testName + "/program");
+      };
+    })(testName));
+
+  }
+</script>
+</body>
+</html>
