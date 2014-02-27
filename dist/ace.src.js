@@ -299,9 +299,9 @@ function resolve(p) {
 function normalize(p) {
   // step1: combine multi slashes
   p = p.replace(/(\/)+/g, '/');
-  p = p.split(slashRegExp);
 
   // step2: resolve `.` and `..`
+  p = p.split(slashRegExp);
   for (var i = 0; i < p.length; ++i) {
     if (p[i] === '.') {
       p.splice(i, 1);
@@ -349,9 +349,24 @@ function id2url(moduleName, base) {
   moduleName = normalize(moduleName);
   var conjuction = moduleName[0] == '/' ? '' : '/';
   var url = (base ? dirname(base) : getPageDir()) + conjuction + moduleName;
+
   if (!jsExtRegExp.test(url))
     url += '.js';
-  return url
+
+
+  //todo
+  url = url.split(slashRegExp);
+  for (var i = 0; i < url.length; ++i) {
+    if (url[i] === '.') {
+      url.splice(i, 1);
+      --i;
+    } else if (url[i] === '..' && i > 0 && url[i - 1] != '..') {
+      url.splice(i - 1, 2);
+      i -= 2;
+    }
+  }
+
+  return url.join('/')
 }
 
 
@@ -373,11 +388,18 @@ function id2url(moduleName, base) {
 var READYSTATE = {
   UNSENT: 0,
   OPENED: 1,
-  HEADERS_RECEIVED: 2,
-  LOADING: 3,
-  DONE: 4,
-  COMPLETE: 5
+  LOADING: 2,
+  LOADED: 3,
+  FETCHING: 4,
+  FETCHED: 5,
+  COMPLETE: 6
 };
+
+
+/**
+ * @type {Module?} current interactive module;
+ */
+var currentModule;
 
 
 /**
@@ -395,6 +417,7 @@ function Module(id) {
   this.requireModules = null;
   /** @type {object?} */
   this.exports = null;
+  /** @type {number} default to UNSET */
   this.status = READYSTATE.UNSENT;
   /** @type {string} */
   this.code = '';
@@ -428,13 +451,18 @@ Module.prototype = {
    * load self script file depend on self.id
    */
   fetchSelfModule: function () {
+    this.status = READYSTATE.OPENED;
     var xhr = xhrio.createXhr();
+    this.status = READYSTATE.LOADING;
+    // require self module file
     xhrio.send(xhr, this.id, 'GET', this.resolveRequiredModules, this);
-    this.status = READYSTATE.DONE;
+    // execute self's code
+    currentModule = this;
     this.execCode();
+    // register module to global cache
     Module.registerModule(this.id, this);
     this.status = READYSTATE.COMPLETE;
-    return this.exports
+    return this.exports;
   },
 
 
@@ -445,6 +473,7 @@ Module.prototype = {
    * @param {!string} code Source code in text-format.
    */
   resolveRequiredModules: function (code) {
+    this.status = READYSTATE.LOADED;
     var self = this;
     var requireModules = [];
     // resolve txt-format source code
@@ -455,7 +484,8 @@ Module.prototype = {
       });
     // All deps modules should be initialised at this point
     this.requireModules = utils.map(requireModules, function (url) {
-      return new Module(url)
+      // the Module with the unique url maybe cached already
+      return ace.cache[url] || (ace.cache[url] = new Module(url))
     });
     // fetch dependencies modules
     this.fetchRequiredModules()
@@ -466,9 +496,12 @@ Module.prototype = {
    * we need to fetch all deps modules.
    */
   fetchRequiredModules: function () {
+    this.status = READYSTATE.FETCHING;
     utils.forEach(this.requireModules, function (module) {
-      module.fetchSelfModule()
+      if (module.status < READYSTATE.COMPLETE)
+        module.fetchSelfModule();
     });
+    this.status = READYSTATE.FETCHED;
   },
 
 
@@ -478,8 +511,14 @@ Module.prototype = {
   execCode: function () {
     var module = {exports: {}};
     var f = new Function('require', 'module', 'exports', this.code);
+    var self = this;
+    var _require = (function () {
+      return function () {
+        return ace.require.apply(self, ap.slice.call(arguments));
+      }
+    }());
     // todo function's context should be another object
-    f.call({}, ace.require, module, module.exports);
+    f.call(this, _require, module, module.exports);
     this.exports = module.exports
   }
 
@@ -497,11 +536,50 @@ var xhrio = {
      * @return {XMLHttpRequest}
      */
     createXhr: function () {
-        return new XMLHttpRequest()
+      var ieProgId_ = '';
+      // The following blog post describes what PROG IDs to use to create the
+      // XMLHTTP object in Internet Explorer:
+      // http://blogs.msdn.com/xmlteam/archive/2006/10/23/
+      // using-the-right-version-of-msxml-in-internet-explorer.aspx
+      // However we do not (yet) fully trust that this will be OK for old versions
+      // of IE on Win9x so we therefore keep the last 2.
+      if (typeof XMLHttpRequest == 'undefined' &&
+        typeof ActiveXObject != 'undefined') {
+        // Candidate Active X types.
+        var ACTIVE_X_IDENTS = [
+          'MSXML2.XMLHTTP.6.0',
+          'MSXML2.XMLHTTP.3.0',
+          'MSXML2.XMLHTTP',
+          'Microsoft.XMLHTTP'
+        ];
+        for (var i = 0; i < ACTIVE_X_IDENTS.length; i++) {
+          var candidate = ACTIVE_X_IDENTS[i];
+          try {
+            new ActiveXObject(candidate);
+            // NOTE(user): cannot assign progid and return candidate in one line
+            // because JSCompiler complaings: BUG 658126
+            ieProgId_ = candidate;
+          } catch (e) {
+            // do nothing; try next choice
+          }
+        }
+
+        // couldn't find any matches
+        throw Error('Could not create ActiveXObject. ActiveX might be disabled,' +
+          ' or MSXML might not be installed');
+      }
+
+      if (ieProgId_) {
+        return new ActiveXObject(ieProgId_);
+      } else {
+        return new XMLHttpRequest();
+      }
     },
 
+
     /**
-     *
+     * Send a http request to get the specified module
+     * with a xhr.
      *
      * @param {XMLHttpRequest} xhr
      * @param {string} url
@@ -510,22 +588,23 @@ var xhrio = {
      * @param {object?} context
      */
     send: function (xhr, url, opt_method, callback, context) {
-        xhr.onreadystatechange = function () {
-          if (this.readyState == READYSTATE.DONE) {
-            if (this.status == 200)
-              callback.call(context, this.responseText);
-          }
-        };
-        xhr.open(opt_method || 'GET', url, false);
-        xhr.send(null);
+      xhr.onreadystatechange = function () {
+        if (this.readyState == 4) {
+          if (this.status == 200)
+            callback.call(context, this.responseText);
+        }
+      };
+      xhr.open(opt_method || 'GET', url, false);
+      xhr.send(null);
     },
+
 
     /**
      * Handle callback when xhr's onreadystatechange event
      * been triggered.
      */
     xhrOnLoad: function () {
-      if (this.readyState == READYSTATE.DONE) {
+      if (this.readyState == 4) {
         if (this.status == 200)
           callback.call(context);
       }
@@ -548,8 +627,12 @@ var ace = {
    * @return {Module}
    */
   require: function (moduleName) {
-    var url = id2url(moduleName);
-    if (ace.cache[url] /*&& ace.cache[url].status >= READYSTATE.LOADING*/) {
+    var base = this ? this.id : '';
+    var url = id2url(moduleName, base);
+    if (ace.cache[url]) {
+      if (ace.cache[url].status == READYSTATE.FETCHING)
+        throw 'circular deps occured. from ' +
+          (currentModule && currentModule.id || '') + ' to ' + url;
       return ace.cache[url]
     } else {
       var module = ace.cache[url] = new Module(url);

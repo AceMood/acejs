@@ -17,11 +17,18 @@
 var READYSTATE = {
   UNSENT: 0,
   OPENED: 1,
-  HEADERS_RECEIVED: 2,
-  LOADING: 3,
-  DONE: 4,
-  COMPLETE: 5
+  LOADING: 2,
+  LOADED: 3,
+  FETCHING: 4,
+  FETCHED: 5,
+  COMPLETE: 6
 };
+
+
+/**
+ * @type {Module?} current interactive module;
+ */
+var currentModule;
 
 
 /**
@@ -39,6 +46,7 @@ function Module(id) {
   this.requireModules = null;
   /** @type {object?} */
   this.exports = null;
+  /** @type {number} default to UNSET */
   this.status = READYSTATE.UNSENT;
   /** @type {string} */
   this.code = '';
@@ -72,13 +80,18 @@ Module.prototype = {
    * load self script file depend on self.id
    */
   fetchSelfModule: function () {
+    this.status = READYSTATE.OPENED;
     var xhr = xhrio.createXhr();
+    this.status = READYSTATE.LOADING;
+    // require self module file
     xhrio.send(xhr, this.id, 'GET', this.resolveRequiredModules, this);
-    this.status = READYSTATE.DONE;
+    // execute self's code
+    currentModule = this;
     this.execCode();
+    // register module to global cache
     Module.registerModule(this.id, this);
     this.status = READYSTATE.COMPLETE;
-    return this.exports
+    return this.exports;
   },
 
 
@@ -89,6 +102,7 @@ Module.prototype = {
    * @param {!string} code Source code in text-format.
    */
   resolveRequiredModules: function (code) {
+    this.status = READYSTATE.LOADED;
     var self = this;
     var requireModules = [];
     // resolve txt-format source code
@@ -99,7 +113,8 @@ Module.prototype = {
       });
     // All deps modules should be initialised at this point
     this.requireModules = utils.map(requireModules, function (url) {
-      return new Module(url)
+      // the Module with the unique url maybe cached already
+      return ace.cache[url] || (ace.cache[url] = new Module(url))
     });
     // fetch dependencies modules
     this.fetchRequiredModules()
@@ -110,9 +125,12 @@ Module.prototype = {
    * we need to fetch all deps modules.
    */
   fetchRequiredModules: function () {
+    this.status = READYSTATE.FETCHING;
     utils.forEach(this.requireModules, function (module) {
-      module.fetchSelfModule()
+      if (module.status < READYSTATE.COMPLETE)
+        module.fetchSelfModule();
     });
+    this.status = READYSTATE.FETCHED;
   },
 
 
@@ -122,8 +140,14 @@ Module.prototype = {
   execCode: function () {
     var module = {exports: {}};
     var f = new Function('require', 'module', 'exports', this.code);
+    var self = this;
+    var _require = (function () {
+      return function () {
+        return ace.require.apply(self, ap.slice.call(arguments));
+      }
+    }());
     // todo function's context should be another object
-    f.call({}, ace.require, module, module.exports);
+    f.call(this, _require, module, module.exports);
     this.exports = module.exports
   }
 

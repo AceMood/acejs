@@ -119,9 +119,9 @@ function resolve(p) {
 function normalize(p) {
   // step1: combine multi slashes
   p = p.replace(/(\/)+/g, '/');
-  p = p.split(slashRegExp);
 
   // step2: resolve `.` and `..`
+  p = p.split(slashRegExp);
   for (var i = 0; i < p.length; ++i) {
     if (p[i] === '.') {
       p.splice(i, 1);
@@ -169,7 +169,22 @@ function id2url(moduleName, base) {
   moduleName = normalize(moduleName);
   var conjuction = moduleName[0] == '/' ? '' : '/';
   var url = (base ? dirname(base) : getPageDir()) + conjuction + moduleName;
+
   if (!jsExtRegExp.test(url))
     url += '.js';
-  return url
+
+
+  //todo
+  url = url.split(slashRegExp);
+  for (var i = 0; i < url.length; ++i) {
+    if (url[i] === '.') {
+      url.splice(i, 1);
+      --i;
+    } else if (url[i] === '..' && i > 0 && url[i - 1] != '..') {
+      url.splice(i - 1, 2);
+      i -= 2;
+    }
+  }
+
+  return url.join('/')
 }

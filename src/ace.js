@@ -14,8 +14,12 @@ var ace = {
    * @return {Module}
    */
   require: function (moduleName) {
-    var url = id2url(moduleName);
-    if (ace.cache[url] /*&& ace.cache[url].status >= READYSTATE.LOADING*/) {
+    var base = this ? this.id : '';
+    var url = id2url(moduleName, base);
+    if (ace.cache[url]) {
+      if (ace.cache[url].status == READYSTATE.FETCHING)
+        throw 'circular deps occured. from ' +
+          (currentModule && currentModule.id || '') + ' to ' + url;
       return ace.cache[url]
     } else {
       var module = ace.cache[url] = new Module(url);
