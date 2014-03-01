@@ -3,8 +3,7 @@ window.print = function(message, type) {
     if (message == 'DONE') {
       start();
     }
-  }
-  else {
+  } else {
     ok(type == 'pass', message);
   }
 };

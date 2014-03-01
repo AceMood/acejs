@@ -19,9 +19,8 @@ var READYSTATE = {
   OPENED: 1,
   LOADING: 2,
   LOADED: 3,
-  FETCHING: 4,
-  FETCHED: 5,
-  COMPLETE: 6
+  EXECUTING: 4,
+  COMPLETE: 5
 };
 
 
@@ -63,7 +62,7 @@ function Module(id) {
  *   can be nullable.
  */
 Module.registerModule = function (id, module) {
-  ace.cache[id] = module.exports
+  ace.cache[id] = module;
 };
 
 
@@ -109,33 +108,54 @@ Module.prototype = {
     this.code = code.replace(commentRegExp, '')
       .replace(requireRegExp, function (match, quote, moduleName) {
         requireModules.push(id2url(moduleName, self.id));
-        return match
+        return match;
       });
     // All deps modules should be initialised at this point
     this.requireModules = utils.map(requireModules, function (url) {
       // the Module with the unique url maybe cached already
       return ace.cache[url] || (ace.cache[url] = new Module(url))
     });
-    // fetch dependencies modules
-    this.fetchRequiredModules()
+
+    /**
+     * fetch dependencies modules
+     * here I decided not to fetch dependency
+     * modules at this time. The chance move to
+     * execute `require` statement. Because it is
+     * a sync require so it dese not matter.
+     */
+    // this.fetchRequiredModules()
   },
 
 
   /**
-   * we need to fetch all deps modules.
+   * we need to fetch all deps modules before execute the module's code.
+   *
+   * If there has a circular dependency, a->b and b->a, when goes here:
+   * b.fetchRequiredModules (from b.resolveRequiredModules), a.status
+   * could be `READYSTATE.FETCHING` and a.exports could be plain object
+   * as in a initialization stage.
    */
   fetchRequiredModules: function () {
+    var self = this;
     this.status = READYSTATE.FETCHING;
     utils.forEach(this.requireModules, function (module) {
-      if (module.status < READYSTATE.COMPLETE)
+      // occurs a circular dependencies
+      if (module.status === READYSTATE.FETCHING) {
+        if (ace.config.logLevel >= LogLevel.INFO) {
+          throw 'circular deps occured. from ' +
+            (self && self.id || '') + ' to ' + module.id;
+        }
+        Module.registerModule(module.id, module);
+      } else if (module.status < READYSTATE.COMPLETE) {
         module.fetchSelfModule();
+      }
     });
     this.status = READYSTATE.FETCHED;
   },
 
 
   /**
-   * After all, we execute this.code;
+   * execute this.code;
    */
   execCode: function () {
     var module = {exports: {}};
@@ -147,8 +167,9 @@ Module.prototype = {
       }
     }());
     // todo function's context should be another object
+    this.exports = module.exports;
+    this.status = READYSTATE.EXECUTING;
     f.call(this, _require, module, module.exports);
-    this.exports = module.exports
   }
 
 };

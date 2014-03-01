@@ -95,15 +95,6 @@ function join(var_p) {
 
 
 /**
- *
- * @param p
- */
-function resolve(p) {
-
-}
-
-
-/**
  * Normalize a string path, taking care of '..' and '.' parts.
  *
  * When multiple slashes are found, they're replaced by a single one;
@@ -172,7 +163,6 @@ function id2url(moduleName, base) {
 
   if (!jsExtRegExp.test(url))
     url += '.js';
-
 
   //todo
   url = url.split(slashRegExp);

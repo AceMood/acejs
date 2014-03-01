@@ -19,22 +19,22 @@
 
   var tests = [
     ['absolute', 1],
-    ['cyclic', 4]/*,
-     ['determinism', 1],
-     ['exactExports', 1],
-     ['hasOwnProperty', 0],
-     ['method', 3],
-     ['missing', 1],
-     ['monkeys', 1],
-     ['nested', 1],
-     ['relative', 1],
-     ['transitive', 1]*/
+    ['cyclic', 4],
+    ['determinism', 1],
+    ['exactExports', 1],
+    ['hasOwnProperty', 0],
+    ['method', 3],
+    /*['missing', 1],*/
+    ['monkeys', 1],
+    ['nested', 1],
+    ['relative', 1],
+    ['transitive', 1]
   ];
 
   for (var i = 0, n = tests.length; i < n; i++) {
     var testName = tests[i][0],
       expected = tests[i][1];
-    test(testName, (function(testName) {
+    test(testName, expected, (function(testName) {
       return function() {
         stop();
         reset();

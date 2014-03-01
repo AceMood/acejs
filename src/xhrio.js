@@ -64,8 +64,9 @@ var xhrio = {
     send: function (xhr, url, opt_method, callback, context) {
       xhr.onreadystatechange = function () {
         if (this.readyState == 4) {
-          if (this.status == 200)
+          if (this.status == 200) {
             callback.call(context, this.responseText);
+          }
         }
       };
       xhr.open(opt_method || 'GET', url, false);

@@ -180,6 +180,28 @@ var utils = {
 
 
 /**
+ * Created with JetBrains WebStorm.
+ * User: Leo
+ * Date: 14-3-1
+ * Time: 上午12:40
+ * To change this template use File | Settings | File Templates.
+ */
+
+var LogLevel = {
+  SEVERE: 4,
+  INFO: 2,
+  SILENT: 1
+};
+
+
+var Log = {
+  record: function () {
+
+  }
+};
+
+
+/**
  * @fileoverview This module contains utilities for handling and
  * transforming file paths. Almost all these methods perform only
  * string transformations. The file system is not consulted to check
@@ -275,15 +297,6 @@ function join(var_p) {
 
 
 /**
- *
- * @param p
- */
-function resolve(p) {
-
-}
-
-
-/**
  * Normalize a string path, taking care of '..' and '.' parts.
  *
  * When multiple slashes are found, they're replaced by a single one;
@@ -353,7 +366,6 @@ function id2url(moduleName, base) {
   if (!jsExtRegExp.test(url))
     url += '.js';
 
-
   //todo
   url = url.split(slashRegExp);
   for (var i = 0; i < url.length; ++i) {
@@ -390,9 +402,8 @@ var READYSTATE = {
   OPENED: 1,
   LOADING: 2,
   LOADED: 3,
-  FETCHING: 4,
-  FETCHED: 5,
-  COMPLETE: 6
+  EXECUTING: 4,
+  COMPLETE: 5
 };
 
 
@@ -434,7 +445,7 @@ function Module(id) {
  *   can be nullable.
  */
 Module.registerModule = function (id, module) {
-  ace.cache[id] = module.exports
+  ace.cache[id] = module;
 };
 
 
@@ -480,33 +491,54 @@ Module.prototype = {
     this.code = code.replace(commentRegExp, '')
       .replace(requireRegExp, function (match, quote, moduleName) {
         requireModules.push(id2url(moduleName, self.id));
-        return match
+        return match;
       });
     // All deps modules should be initialised at this point
     this.requireModules = utils.map(requireModules, function (url) {
       // the Module with the unique url maybe cached already
       return ace.cache[url] || (ace.cache[url] = new Module(url))
     });
-    // fetch dependencies modules
-    this.fetchRequiredModules()
+
+    /**
+     * fetch dependencies modules
+     * here I decided not to fetch dependency
+     * modules at this time. The chance move to
+     * execute `require` statement. Because it is
+     * a sync require so it dese not matter.
+     */
+    // this.fetchRequiredModules()
   },
 
 
   /**
-   * we need to fetch all deps modules.
+   * we need to fetch all deps modules before execute the module's code.
+   *
+   * If there has a circular dependency, a->b and b->a, when goes here:
+   * b.fetchRequiredModules (from b.resolveRequiredModules), a.status
+   * could be `READYSTATE.FETCHING` and a.exports could be plain object
+   * as in a initialization stage.
    */
   fetchRequiredModules: function () {
+    var self = this;
     this.status = READYSTATE.FETCHING;
     utils.forEach(this.requireModules, function (module) {
-      if (module.status < READYSTATE.COMPLETE)
+      // occurs a circular dependencies
+      if (module.status === READYSTATE.FETCHING) {
+        if (ace.config.logLevel >= LogLevel.INFO) {
+          throw 'circular deps occured. from ' +
+            (self && self.id || '') + ' to ' + module.id;
+        }
+        Module.registerModule(module.id, module);
+      } else if (module.status < READYSTATE.COMPLETE) {
         module.fetchSelfModule();
+      }
     });
     this.status = READYSTATE.FETCHED;
   },
 
 
   /**
-   * After all, we execute this.code;
+   * execute this.code;
    */
   execCode: function () {
     var module = {exports: {}};
@@ -518,8 +550,9 @@ Module.prototype = {
       }
     }());
     // todo function's context should be another object
+    this.exports = module.exports;
+    this.status = READYSTATE.EXECUTING;
     f.call(this, _require, module, module.exports);
-    this.exports = module.exports
   }
 
 };
@@ -619,25 +652,65 @@ var requireRegExp = /\brequire\s*\(\s*(["'])([^'"\s]+)\1\s*\)/g,
 
 
 var ace = {
-  author: 'zmike86',
-  version : '0.1',
+  author: 'zmike86@gmail.com',
+  version : '0.2',
   /**
-   * require function
+   * Import a module and synchronously returns a exports
+   * object stand for the module.
    * @param {string} moduleName
-   * @return {Module}
+   * @return {Object|Module}
    */
   require: function (moduleName) {
     var base = this ? this.id : '';
     var url = id2url(moduleName, base);
+    // seems like a module requires itself,
+    // this seldom happen but once happen we throw
+    // an indicated error.
+    if (url === this.id) {
+      throw 'module at ' + url + ' requires itself.';
+    }
+
     if (ace.cache[url]) {
-      if (ace.cache[url].status == READYSTATE.FETCHING)
-        throw 'circular deps occured. from ' +
-          (currentModule && currentModule.id || '') + ' to ' + url;
-      return ace.cache[url]
+      // If there has a circular dependency, a->b and b->a, when goes here:
+      // require('a') (from b), a.status could be `READYSTATE.EXECUTING`
+      // and a.exports could be plain object as in a initialization stage.
+      if (ace.cache[url].status == READYSTATE.EXECUTING) {
+        if (ace.config.logLevel >= LogLevel.INFO) {
+          throw 'circular deps occured. from ' +
+            (this && this.id || '') + ' to ' + url;
+        } else {
+          return ace.cache[url].exports;
+        }
+      // only resolved by foreign module and has been
+      // recorded in the global cache but not export anything.
+      } else if (ace.cache[url].status < READYSTATE.COMPLETE) {
+        return ace.cache[url].fetchSelfModule();
+      }
+      return ace.cache[url].exports;
     } else {
       var module = ace.cache[url] = new Module(url);
-      return module.fetchSelfModule()
+      return module.fetchSelfModule();
     }
+  },
+
+  set: function () {
+    ace.config[name] = value;
+  },
+  /**
+   * This method provided for test. It clear all
+   * cached modules and reset the ace.config object.
+   */
+  reset: function () {
+    ace.cache = {};
+  },
+  /**
+   * start the entire app from this entry.
+   */
+  setup: function () {
+    var entry = utils.getAceNode().getAttribute('data-main');
+    entry = id2url(entry);
+    var module = ace.cache[entry] = new Module(entry);
+    module.fetchSelfModule();
   }
 };
 
@@ -646,7 +719,10 @@ var ace = {
  * Default configuration object.
  * @type {*|Object}
  */
-ace.config = global.aceConfig || {};
+ace.config = global.aceConfig || {
+  logLevel: LogLevel.SILENT,
+  root: getPageDir()
+};
 
 
 /**
@@ -658,11 +734,6 @@ ace.config = global.aceConfig || {};
 ace.cache = {};
 
 // start load entry module
-(function () {
-  var entry = utils.getAceNode().getAttribute('data-main');
-  entry = id2url(entry);
-  var module = ace.cache[entry] = new Module(entry);
-  module.fetchSelfModule();
-}());
+ace.setup();
 
 }(this))
