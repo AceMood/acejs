@@ -58,10 +58,10 @@ var xhrio = {
           // do nothing; try next choice
         }
       }
-
-      // couldn't find any matches
-      throw Error('Could not create ActiveXObject. ActiveX might be disabled,' +
-        ' or MSXML might not be installed');
+      if (!ieProgId_)
+        // couldn't find any matches
+        throw Error('Could not create ActiveXObject. ActiveX might be disabled,' +
+          ' or MSXML might not be installed');
     }
 
     if (ieProgId_) {
