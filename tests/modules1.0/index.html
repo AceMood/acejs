@@ -15,6 +15,7 @@
 <script type="text/javascript" src="../print.js"></script>
 <script type="text/javascript" src="../test.js"></script>
 <script type="text/javascript" src="reset.js"></script>
+<script type="text/javascript" src="../../dist/ace.src.js" debug="true"></script>
 <script type="text/javascript">
 
   var tests = [
@@ -24,7 +25,7 @@
     ['exactExports', 1],
     ['hasOwnProperty', 0],
     ['method', 3],
-    /*['missing', 1],*/
+    ['missing', 1],
     ['monkeys', 1],
     ['nested', 1],
     ['relative', 1],
@@ -37,8 +38,7 @@
     test(testName, expected, (function(testName) {
       return function() {
         stop();
-        reset();
-        addNewTest("tests/" + testName + "/program");
+        reset("tests/" + testName + "/program");
       };
     })(testName));
 

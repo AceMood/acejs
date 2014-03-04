@@ -48,7 +48,7 @@ function Module(id) {
   /** @type {number} default to UNSET */
   this.status = READYSTATE.UNSENT;
   /** @type {string} */
-  this.code = '';
+  this.code = ''
 }
 
 
@@ -62,7 +62,7 @@ function Module(id) {
  *   can be nullable.
  */
 Module.registerModule = function (id, module) {
-  ace.cache[id] = module;
+  ace.cache[id] = module
 };
 
 
@@ -90,7 +90,7 @@ Module.prototype = {
     // register module to global cache
     Module.registerModule(this.id, this);
     this.status = READYSTATE.COMPLETE;
-    return this.exports;
+    return this.exports
   },
 
 
@@ -150,7 +150,7 @@ Module.prototype = {
         module.fetchSelfModule();
       }
     });
-    this.status = READYSTATE.FETCHED;
+    this.status = READYSTATE.FETCHED
   },
 
 
@@ -169,7 +169,7 @@ Module.prototype = {
     // todo function's context should be another object
     this.exports = module.exports;
     this.status = READYSTATE.EXECUTING;
-    f.call(this, _require, module, module.exports);
+    f.call(this, _require, module, module.exports)
   }
 
 };

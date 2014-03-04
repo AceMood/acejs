@@ -109,29 +109,44 @@ var doc = document;
 var op = Object.prototype,
     ap = Array.prototype;
 
+
 var utils = {
 
   /**
    * iterate the array and map the value to a delegation
    * function, use the return value replace original item.
-   * @param {!Array} arr
-   * @param {!Function} fn
+   * @param {Array} arr array to be iterated.
+   * @param {Function} fn callback to execute on each item
+   * @param {Object?} opt_context fn's context
    * @return {!Array}
    */
-  map: function (arr, fn) {
-    for (var i = 0; i < arr.length; ++i) {
-      arr[i] = fn(arr[i], i, arr);
+  map: function (arr, fn, opt_context) {
+    var ret = [];
+    if (ap.map && arr.map === ap.map) {
+      ret = arr.map(fn, opt_context);
+    } else if (arr.length === +arr.length) {
+      for (var i = 0; i < arr.length; ++i) {
+        ret.push(fn.call(opt_context || null, arr[i], i, arr));
+      }
     }
-    return arr;
+    return ret;
   },
 
 
   /**
-   *
+   * enhancement for Array.prototype.forEach.
+   * @param {Array} arr array to be iterated.
+   * @param {Function} fn callback to execute on each item
+   * @param {Object?} opt_context fn's context
    */
-  forEach: function (arr, fn) {
-    for (var i = 0; i < arr.length; ++i) {
-      fn(arr[i], i, arr);
+  forEach: function (arr, fn, opt_context) {
+    if (ap.forEach && arr.forEach === ap.forEach) {
+      arr.forEach(fn, opt_context);
+    } else if (arr.length === +arr.length) {
+      for (var i = 0, length = arr.length; i < length; i++) {
+        if (fn.call(opt_context, arr[i], i, arr) === breaker)
+          return;
+      }
     }
   },
 
@@ -161,10 +176,16 @@ var utils = {
     return document.currentScript || (function () {
       if (self.interactiveScript &&
         self.interactiveScript.readyState === 'interactive') {
-        return self.interactiveScript;
+        return self.interactiveScript
       }
 
-      var scriptNodes = ap.slice.apply(self.scripts());
+      var scriptNodes = [];
+      var scripts = self.scripts(),
+        len = scripts.length;
+
+      for (var i=0; i<len; ++i) {
+        scriptNodes.push(scripts[i])
+      }
       var script;
       while (script = scriptNodes.pop()) {
         if (script.readyState === 'interactive') {
@@ -431,7 +452,7 @@ function Module(id) {
   /** @type {number} default to UNSET */
   this.status = READYSTATE.UNSENT;
   /** @type {string} */
-  this.code = '';
+  this.code = ''
 }
 
 
@@ -445,7 +466,7 @@ function Module(id) {
  *   can be nullable.
  */
 Module.registerModule = function (id, module) {
-  ace.cache[id] = module;
+  ace.cache[id] = module
 };
 
 
@@ -473,7 +494,7 @@ Module.prototype = {
     // register module to global cache
     Module.registerModule(this.id, this);
     this.status = READYSTATE.COMPLETE;
-    return this.exports;
+    return this.exports
   },
 
 
@@ -533,7 +554,7 @@ Module.prototype = {
         module.fetchSelfModule();
       }
     });
-    this.status = READYSTATE.FETCHED;
+    this.status = READYSTATE.FETCHED
   },
 
 
@@ -552,96 +573,108 @@ Module.prototype = {
     // todo function's context should be another object
     this.exports = module.exports;
     this.status = READYSTATE.EXECUTING;
-    f.call(this, _require, module, module.exports);
+    f.call(this, _require, module, module.exports)
   }
 
 };
 
 
+/**
+ * This mainly implement the xhr factory object.
+ * In the core, we use xhr to fetch JavaScript file
+ * in AceJS.
+ *
+ * @fileoverview
+ */
+
+
 var xhrio = {
 
-    /**
-     * A factory method to create a xhr object xros
-     * browsers. More use of it, more memory and resource
-     * it take, so consider use `xhrpool` instead in the
-     * future.
-     *
-     * @return {XMLHttpRequest}
-     */
-    createXhr: function () {
-      var ieProgId_ = '';
-      // The following blog post describes what PROG IDs to use to create the
-      // XMLHTTP object in Internet Explorer:
-      // http://blogs.msdn.com/xmlteam/archive/2006/10/23/
-      // using-the-right-version-of-msxml-in-internet-explorer.aspx
-      // However we do not (yet) fully trust that this will be OK for old versions
-      // of IE on Win9x so we therefore keep the last 2.
-      if (typeof XMLHttpRequest == 'undefined' &&
-        typeof ActiveXObject != 'undefined') {
-        // Candidate Active X types.
-        var ACTIVE_X_IDENTS = [
-          'MSXML2.XMLHTTP.6.0',
-          'MSXML2.XMLHTTP.3.0',
-          'MSXML2.XMLHTTP',
-          'Microsoft.XMLHTTP'
-        ];
-        for (var i = 0; i < ACTIVE_X_IDENTS.length; i++) {
-          var candidate = ACTIVE_X_IDENTS[i];
-          try {
-            new ActiveXObject(candidate);
-            // NOTE(user): cannot assign progid and return candidate in one line
-            // because JSCompiler complaings: BUG 658126
-            ieProgId_ = candidate;
-          } catch (e) {
-            // do nothing; try next choice
-          }
+  /**
+   * Highly recommend to read the definition:
+   * `http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html`
+   */
+  STATUSCODE: {
+    OK: 200,
+    REDIRECT: 302,
+    FORBIDDEN: 403,
+    NOTFOUND: 404
+  },
+
+
+  /**
+   * A factory method to create a xhr object accross
+   * browsers. More use of it, more memory and resource
+   * it take, so consider use `xhrpool` instead in the
+   * future.
+   *
+   * @return {XMLHttpRequest}
+   */
+  createXhr: function () {
+    var ieProgId_ = '';
+    // The following blog post describes what PROG IDs to use to create the
+    // XMLHTTP object in Internet Explorer:
+    // http://blogs.msdn.com/xmlteam/archive/2006/10/23/
+    // using-the-right-version-of-msxml-in-internet-explorer.aspx
+    // However we do not (yet) fully trust that this will be OK for old versions
+    // of IE on Win9x so we therefore keep the last 2.
+    if (typeof XMLHttpRequest == 'undefined' &&
+      typeof ActiveXObject != 'undefined') {
+      // Candidate Active X types.
+      var ACTIVE_X_IDENTS = [
+        'MSXML2.XMLHTTP.6.0',
+        'MSXML2.XMLHTTP.3.0',
+        'MSXML2.XMLHTTP',
+        'Microsoft.XMLHTTP'
+      ];
+      for (var i = 0; i < ACTIVE_X_IDENTS.length; i++) {
+        var candidate = ACTIVE_X_IDENTS[i];
+        try {
+          new ActiveXObject(candidate);
+          // NOTE(user): cannot assign progid and return candidate in one line
+          // because JSCompiler complaings: BUG 658126
+          ieProgId_ = candidate;
+        } catch (e) {
+          // do nothing; try next choice
         }
-
-        // couldn't find any matches
-        throw Error('Could not create ActiveXObject. ActiveX might be disabled,' +
-          ' or MSXML might not be installed');
       }
 
-      if (ieProgId_) {
-        return new ActiveXObject(ieProgId_);
-      } else {
-        return new XMLHttpRequest();
-      }
-    },
-
-
-    /**
-     * Send a http request to get the specified module
-     * with a xhr.
-     *
-     * @param {XMLHttpRequest} xhr
-     * @param {string} url
-     * @param {string} opt_method
-     * @param {function} callback
-     * @param {object?} context
-     */
-    send: function (xhr, url, opt_method, callback, context) {
-      xhr.onreadystatechange = function () {
-        if (this.readyState == 4) {
-          if (this.status == 200)
-            callback.call(context, this.responseText);
-        }
-      };
-      xhr.open(opt_method || 'GET', url, false);
-      xhr.send(null);
-    },
-
-
-    /**
-     * Handle callback when xhr's onreadystatechange event
-     * been triggered.
-     */
-    xhrOnLoad: function () {
-      if (this.readyState == 4) {
-        if (this.status == 200)
-          callback.call(context);
-      }
+      // couldn't find any matches
+      throw Error('Could not create ActiveXObject. ActiveX might be disabled,' +
+        ' or MSXML might not be installed');
     }
+
+    if (ieProgId_) {
+      return new ActiveXObject(ieProgId_);
+    } else {
+      return new XMLHttpRequest();
+    }
+  },
+
+
+  /**
+   * Send a http request to get the specified module
+   * with a xhr.
+   *
+   * @param {XMLHttpRequest} xhr
+   * @param {string} url
+   * @param {string} opt_method
+   * @param {function} callback
+   * @param {object?} context
+   */
+  send: function (xhr, url, opt_method, callback, context) {
+    xhr.open(opt_method || 'GET', url, false);
+    try {
+      xhr.send(null);
+    } catch (ex) {}
+
+    if (xhr.status === xhrio.STATUSCODE.OK) {
+      callback.call(context, xhr.responseText)
+    } else {
+      throw Error('failed fetch module at: ' + url + ' ' + xhr.statusText);
+    }
+  }
+
 };
 
 
@@ -652,8 +685,12 @@ var requireRegExp = /\brequire\s*\(\s*(["'])([^'"\s]+)\1\s*\)/g,
 
 
 var ace = {
+
   author: 'zmike86@gmail.com',
-  version : '0.2',
+  version : '0.4',
+  node: utils.getAceNode(),
+
+
   /**
    * Import a module and synchronously returns a exports
    * object stand for the module.
@@ -693,9 +730,7 @@ var ace = {
     }
   },
 
-  set: function () {
-    ace.config[name] = value;
-  },
+
   /**
    * This method provided for test. It clear all
    * cached modules and reset the ace.config object.
@@ -703,15 +738,18 @@ var ace = {
   reset: function () {
     ace.cache = {};
   },
+
+
   /**
    * start the entire app from this entry.
    */
   setup: function () {
-    var entry = utils.getAceNode().getAttribute('data-main');
+    var entry = ace.node.getAttribute('data-main');
     entry = id2url(entry);
     var module = ace.cache[entry] = new Module(entry);
-    module.fetchSelfModule();
+    module.fetchSelfModule()
   }
+
 };
 
 
@@ -721,7 +759,8 @@ var ace = {
  */
 ace.config = global.aceConfig || {
   logLevel: LogLevel.SILENT,
-  root: getPageDir()
+  root: getPageDir(),
+  testable: ace.node.getAttribute("debug") || false
 };
 
 
@@ -733,7 +772,14 @@ ace.config = global.aceConfig || {
  */
 ace.cache = {};
 
-// start load entry module
-ace.setup();
+
+if (ace.config.testable) {
+  // do not setup. depend on user's action to invoke setup method
+  // manually
+  global.acejs = ace;
+} else {
+  // start load entry module when self executing.
+  ace.setup();
+}
 
 }(this))

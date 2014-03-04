@@ -6,8 +6,12 @@ var requireRegExp = /\brequire\s*\(\s*(["'])([^'"\s]+)\1\s*\)/g,
 
 
 var ace = {
+
   author: 'zmike86@gmail.com',
-  version : '0.2',
+  version : '0.4',
+  node: utils.getAceNode(),
+
+
   /**
    * Import a module and synchronously returns a exports
    * object stand for the module.
@@ -47,9 +51,7 @@ var ace = {
     }
   },
 
-  set: function () {
-    ace.config[name] = value;
-  },
+
   /**
    * This method provided for test. It clear all
    * cached modules and reset the ace.config object.
@@ -57,15 +59,18 @@ var ace = {
   reset: function () {
     ace.cache = {};
   },
+
+
   /**
    * start the entire app from this entry.
    */
   setup: function () {
-    var entry = utils.getAceNode().getAttribute('data-main');
+    var entry = ace.node.getAttribute('data-main');
     entry = id2url(entry);
     var module = ace.cache[entry] = new Module(entry);
-    module.fetchSelfModule();
+    module.fetchSelfModule()
   }
+
 };
 
 
@@ -75,7 +80,8 @@ var ace = {
  */
 ace.config = global.aceConfig || {
   logLevel: LogLevel.SILENT,
-  root: getPageDir()
+  root: getPageDir(),
+  testable: ace.node.getAttribute("debug") || false
 };
 
 
@@ -87,5 +93,12 @@ ace.config = global.aceConfig || {
  */
 ace.cache = {};
 
-// start load entry module
-ace.setup();
+
+if (ace.config.testable) {
+  // do not setup. depend on user's action to invoke setup method
+  // manually
+  global.acejs = ace;
+} else {
+  // start load entry module when self executing.
+  ace.setup();
+}
