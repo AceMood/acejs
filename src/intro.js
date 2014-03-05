@@ -1,8 +1,6 @@
 /**
  * author: AceMood
  * Email: zmike86@gmail.com
- * Date: 14-2-19
- * Time: 上午12:56
  */
 
 /**

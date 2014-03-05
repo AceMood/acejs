@@ -6,14 +6,14 @@
  * whether paths are valid.
  */
 
-// as most time, we find file path delimited by slash symbol
-var slashRegExp = /\//g,
-  // and a directory file path could be ends with a slash (back slash in window)
+
+var // and a directory file path could be ends with a slash (back slash in window)
   dirRegExp = /\/$/g,
   // whether a path to a file with extension
   jsExtRegExp = /\.js$/g;
 
 var loc = global.location;
+
 
 /**
  * to get current document's directory
@@ -112,7 +112,10 @@ function normalize(p) {
   p = p.replace(/(\/)+/g, '/');
 
   // step2: resolve `.` and `..`
-  p = p.split(slashRegExp);
+  // Here I used to use /\//ig to split string, but unfortunately
+  // it has serious bug in IE<9. See for more:
+  // `http://blog.stevenlevithan.com/archives/cross-browser-split`.
+  p = p.split('/');
   for (var i = 0; i < p.length; ++i) {
     if (p[i] === '.') {
       p.splice(i, 1);
@@ -140,7 +143,10 @@ function normalize(p) {
 function dirname(p) {
   if (dirRegExp.test(p))
     return p.slice(0, -1);
-  p = p.split(slashRegExp);
+  // Here I used to use /\//ig to split string, but unfortunately
+  // it has serious bug in IE<9. See for more:
+  // `http://blog.stevenlevithan.com/archives/cross-browser-split`.
+  p = p.split('/');
   p.pop();
   return p.join('/')
 }
@@ -165,7 +171,10 @@ function id2url(moduleName, base) {
     url += '.js';
 
   //todo
-  url = url.split(slashRegExp);
+  // Here I used to use /\//ig to split string, but unfortunately
+  // it has serious bug in IE<9. See for more:
+  // `http://blog.stevenlevithan.com/archives/cross-browser-split`.
+  url = url.split('/');
   for (var i = 0; i < url.length; ++i) {
     if (url[i] === '.') {
       url.splice(i, 1);
