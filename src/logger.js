@@ -16,6 +16,8 @@ var LogLevel = {
 
 var Log = {
   record: function () {
+    if (ace.config.logLevel >= LogLevel.INFO) {
 
+    }
   }
 };

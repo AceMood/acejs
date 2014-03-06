@@ -2,11 +2,11 @@
 /**
  * represent the module's status.
  * A module here is definitely a common script file.
- * Fetch the script with xhr could have the module have
- * the same status with xhr object.
+ * Fetch the script with xhr and execute it could have
+ * the module have the five status below.
  *
  * For more about `onreadystatechange` and `readyState`
- * property in xhr object, plz check here:
+ * property in xhr object, please check here:
  * `https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest`
  *
  * On another hand, we should execute the module code at proper time.
@@ -16,11 +16,10 @@
  */
 var READYSTATE = {
   UNSENT: 0,
-  OPENED: 1,
-  LOADING: 2,
-  LOADED: 3,
-  EXECUTING: 4,
-  COMPLETE: 5
+  LOADING: 1,
+  LOADED: 2,
+  EXECUTING: 3,
+  COMPLETE: 4
 };
 
 
@@ -57,9 +56,9 @@ function Module(id) {
  * Here using its absolute path as key can make it
  * unique all the time.
  *
- * @param {!string} id File path
+ * @param {!String} id Absolute file path
  * @param {object} module Module's exports object, which
- *   can be nullable.
+ *   can be nullable at uninitalization stage.
  */
 Module.registerModule = function (id, module) {
   ace.cache[id] = module
@@ -69,8 +68,8 @@ Module.registerModule = function (id, module) {
 Module.prototype = {
 
   /**
-   * revise the constructor's name to normal.
-   * Or it will be Object.
+   * revise the constructor's name to correct.
+   * Or it will be `Object` instead.
    */
   constructor: Module,
 
@@ -79,7 +78,6 @@ Module.prototype = {
    * load self script file depend on self.id
    */
   fetchSelfModule: function () {
-    this.status = READYSTATE.OPENED;
     var xhr = xhrio.createXhr();
     this.status = READYSTATE.LOADING;
     // require self module file
@@ -108,22 +106,13 @@ Module.prototype = {
     this.code = code.replace(commentRegExp, '')
       .replace(requireRegExp, function (match, quote, moduleName) {
         requireModules.push(id2url(moduleName, self.id));
-        return match;
+        return match
       });
     // All deps modules should be initialised at this point
     this.requireModules = utils.map(requireModules, function (url) {
       // the Module with the unique url maybe cached already
       return ace.cache[url] || (ace.cache[url] = new Module(url))
     });
-
-    /**
-     * fetch dependencies modules
-     * here I decided not to fetch dependency
-     * modules at this time. The chance move to
-     * execute `require` statement. Because it is
-     * a sync require so it dese not matter.
-     */
-    // this.fetchRequiredModules()
   },
 
 
@@ -155,7 +144,7 @@ Module.prototype = {
 
 
   /**
-   * execute this.code;
+   * execute module's text-format code;
    */
   execCode: function () {
     var module = {exports: {}};

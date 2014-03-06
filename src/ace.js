@@ -1,8 +1,8 @@
 
 // A regexp to filter `require('xxx')`
-// A regexp to drop comments in source code
 var requireRegExp = /\brequire\s*\(\s*(["'])([^'"\s]+)\1\s*\)/g,
-    commentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
+// A regexp to drop comments in source code
+  commentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
 
 
 var ace = {
@@ -25,7 +25,7 @@ var ace = {
     // this seldom happen but once happen we throw
     // an indicated error.
     if (url === this.id) {
-      throw 'module at ' + url + ' requires itself.';
+      throw 'module at ' + url + ' requires itself.'
     }
 
     if (ace.cache[url]) {
@@ -78,7 +78,7 @@ var ace = {
  * Default configuration object.
  * @type {*|Object}
  */
-ace.config = global.aceConfig || {
+ace.config = {
   logLevel: LogLevel.SILENT,
   root: getPageDir(),
   testable: ace.node.getAttribute("debug") || false
