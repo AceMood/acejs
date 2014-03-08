@@ -170,28 +170,43 @@ var utils = {
    * @return {!Element}
    */
   getAceNode: function () {
-    var self = this;
+    // Chrome 29.0+ and FireFox 4.0+ support the native
+    // property of document and can determine the current
+    // executing script node.
+    // In IE we use script.readyState to know which is the
+    // right one.
+    // But in older FF(before 4.0) there has no readyState
+    // and currentScript, we use script node has `ace.js` in
+    // its src attribute but be aware that it can not be fully
+    // trusted.
     return document.currentScript || (function () {
-      if (self.interactiveScript &&
-        self.interactiveScript.readyState === 'interactive') {
-        return self.interactiveScript
+      if (utils.interactiveScript &&
+        utils.interactiveScript.readyState === 'interactive') {
+        return utils.interactiveScript
       }
 
-      var scriptNodes = [];
-      var scripts = self.scripts(),
+      var scripts = utils.scripts(),
+        script, i,
         len = scripts.length;
 
-      for (var i=0; i<len; ++i) {
-        scriptNodes.push(scripts[i])
-      }
-      var script;
-      while (script = scriptNodes.pop()) {
+      for (i = 0; i < len; ++i) {
+        script = scripts[i];
         if (script.readyState === 'interactive') {
-          self.interactiveScript = script;
-          break;
+          utils.interactiveScript = script;
+          return script;
         }
       }
-      return self.interactiveScript;
+
+      for (i = 0; i < len; ++i) {
+        script = scripts[i];
+        if (script.getAttribute('src').indexOf('ace.src.js') > 0) {
+          utils.interactiveScript = script;
+          return script;
+        }
+      }
+
+      return utils.interactiveScript || scripts[len - 1];
+
     })();
   }
 
