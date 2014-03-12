@@ -26,19 +26,19 @@ increment.js:
 As the independent module required by app.js, increment.js provide a utilities of
 function set(here only one increment method, note that you can use the exports as
 dependency injection object)
-<code>
+<pre>
 var add = require('./math').add;
 exports.increment = function(val) {
   return add(val, 1);
 };
-</code>
+</pre>
 
 
 math.js:
 As the independent module required by increment.js, math.js provide a utilities of
-function set(here only one add method, note that you can use the exports as
+function set(here only one add method, note that you can use the exports as 
 dependency injection object)
-<code>
+<pre>
 exports.add = function() {
   var sum = 0, i = 0, args = arguments, l = args.length;
   while (i < l) {
@@ -46,7 +46,7 @@ exports.add = function() {
   }
   return sum;
 };
-</code>
+</pre>
 
 If you like the way you write code in this style, and you need not
 to worry about polluting global variables.
@@ -61,7 +61,11 @@ AceJS is seamlessly contact with Browserify.
 Available in:
 
 IE5.5+
+
 Chrome 1.0+
+
 FireFox 3.5+
+
 Safari (to be tested)
+
 Opera (to be tested)
