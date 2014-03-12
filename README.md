@@ -12,8 +12,7 @@ be treated as a relative path to current document's location.
 <script type="text/javascript" src="ace.src.js" data-main="app"></script>
 </code>
 
-
-app.js:
+app.js
 In app.js, wrote your code here to start up, require whatever module you
 need to.
 <code>
@@ -61,7 +60,11 @@ AceJS is seamlessly contact with Browserify.
 
 Available in:
 IE5.5+
+
 Chrome 1.0+
+
 FireFox 3.5+
+
 Safari (to be tested)
+
 Opera (to be tested)
