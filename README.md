@@ -6,8 +6,8 @@ The most convenient point, you can write your code in Node-style.
 Usage:
 
 Just import ace.js in your html and indicate the entry point of your
-code file using data-main property in the script tag as below.
-(It would be treated as a relative path to current document's location)
+code file using data-main property in the script tag as below.It would 
+be treated as a relative path to current document's location.
 <code>
 <script type="text/javascript" src="ace.src.js" data-main="app"></script>
 </code>
