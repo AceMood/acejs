@@ -9,7 +9,7 @@ Just import ace.js in your html and indicate the entry point of your
 code file using data-main property in the script tag as below.
 (It would be treated as a relative path to current document's location)
 <code>
-    <script type="text/javascript" src="ace.src.js" data-main="app"></script>
+<script type="text/javascript" src="ace.src.js" data-main="app"></script>
 </code>
 
 
@@ -17,9 +17,9 @@ app.js:
 In app.js, wrote your code here to start up, require whatever module you
 need to.
 <code>
-    var inc = require('./increment').increment;
-    var a = 1;
-    console.log(inc(a)); // 2
+var inc = require('./increment').increment;
+var a = 1;
+console.log(inc(a)); // 2
 </code>
 
 
@@ -28,10 +28,10 @@ As the independent module required by app.js, increment.js provide a utilities o
 function set(here only one increment method, note that you can use the exports as
 dependency injection object)
 <code>
-    var add = require('./math').add;
-    exports.increment = function(val) {
-      return add(val, 1);
-    };
+var add = require('./math').add;
+exports.increment = function(val) {
+  return add(val, 1);
+};
 </code>
 
 
@@ -40,13 +40,13 @@ As the independent module required by increment.js, math.js provide a utilities 
 function set(here only one add method, note that you can use the exports as
 dependency injection object)
 <code>
-    exports.add = function() {
-      var sum = 0, i = 0, args = arguments, l = args.length;
-      while (i < l) {
-        sum += args[i++];
-      }
-      return sum;
-    };
+exports.add = function() {
+  var sum = 0, i = 0, args = arguments, l = args.length;
+  while (i < l) {
+    sum += args[i++];
+  }
+  return sum;
+};
 </code>
 
 If you like the way you write code in this style, and you need not
