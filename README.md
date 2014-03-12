@@ -8,7 +8,7 @@ Just import ace.js in your html and indicate the entry point of your
 code file using data-main property in the script tag as below.It would 
 be treated as a relative path to current document's location.
 <pre>
-&lt;script type="text/javascript" src="ace.src.js" data-main="app"&lt;&gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="ace.src.js" data-main="app"&gt;&lt;/script&gt;
 </pre>
 
 app.js
@@ -38,16 +38,14 @@ As the independent module required by increment.js, math.js provide a utilities 
 function set(here only one add method, note that you can use the exports as 
 dependency injection object)
 <pre>
-<code>
 exports.add = function() {
   var sum = 0, i = 0, 
       args = arguments, l = args.length;
-  while (i < l) {
+  while (i &lt; l) {
     sum += args[i++];
   }
   return sum
 };
-</code>
 </pre>
 
 If you like the way you write code in this style, and you need not
