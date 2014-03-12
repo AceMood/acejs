@@ -8,18 +8,18 @@ Usage:
 Just import ace.js in your html and indicate the entry point of your
 code file using data-main property in the script tag as below.It would 
 be treated as a relative path to current document's location.
-<code>
+<pre>
 <script type="text/javascript" src="ace.src.js" data-main="app"></script>
-</code>
+</pre>
 
 app.js
 In app.js, wrote your code here to start up, require whatever module you
 need to.
-<code>
+<pre>
 var inc = require('./increment').increment;
 var a = 1;
 console.log(inc(a)); // 2
-</code>
+</pre>
 
 
 increment.js:
@@ -59,12 +59,9 @@ to do the server side building and compress it with any tools you like.
 AceJS is seamlessly contact with Browserify.
 
 Available in:
+
 IE5.5+
-
 Chrome 1.0+
-
 FireFox 3.5+
-
 Safari (to be tested)
-
 Opera (to be tested)
