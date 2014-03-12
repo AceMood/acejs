@@ -9,7 +9,7 @@ Just import ace.js in your html and indicate the entry point of your
 code file using data-main property in the script tag as below.It would 
 be treated as a relative path to current document's location.
 <pre>
-<script type="text/javascript" src="ace.src.js" data-main="app"></script>
+&lt;script type="text/javascript" src="ace.src.js" data-main="app">&gt;&lt;/script&gt;
 </pre>
 
 app.js
@@ -40,11 +40,12 @@ function set(here only one add method, note that you can use the exports as
 dependency injection object)
 <pre>
 exports.add = function() {
-  var sum = 0, i = 0, args = arguments, l = args.length;
+  var sum = 0, i = 0, 
+      args = arguments, l = args.length;
   while (i < l) {
     sum += args[i++];
   }
-  return sum;
+  return sum
 };
 </pre>
 
