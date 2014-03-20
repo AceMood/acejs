@@ -167,7 +167,7 @@ var utils = {
 
   /**
    * get the script node which point to ace.js
-   * @return {!Element}
+   * @return {Element?}
    */
   getAceNode: function () {
     // Chrome 29.0+ and FireFox 4.0+ support the native
@@ -189,6 +189,7 @@ var utils = {
         script, i,
         len = scripts.length;
 
+      // for older IEs do not support currentScript
       for (i = 0; i < len; ++i) {
         script = scripts[i];
         if (script.readyState === 'interactive') {
@@ -197,15 +198,17 @@ var utils = {
         }
       }
 
+      // At last, I check for the src attribute
       for (i = 0; i < len; ++i) {
         script = scripts[i];
-        if (script.getAttribute('src').indexOf('ace.src.js') > 0) {
+		var src = script.getAttribute('src');
+        if (/\bace(?:\.(?:src|min))?\.js$/.test(src)) {
           utils.interactiveScript = script;
           return script;
         }
       }
 
-      return utils.interactiveScript || scripts[len - 1];
+      return null;
 
     })();
   }
