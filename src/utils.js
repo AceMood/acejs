@@ -22,13 +22,13 @@ var utils = {
   map: function (arr, fn, opt_context) {
     var ret = [];
     if (ap.map && arr.map === ap.map) {
-      ret = arr.map(fn, opt_context);
+      ret = arr.map(fn, opt_context)
     } else if (arr.length === +arr.length) {
       for (var i = 0; i < arr.length; ++i) {
-        ret.push(fn.call(opt_context || null, arr[i], i, arr));
+        ret.push(fn.call(opt_context || null, arr[i], i, arr))
       }
     }
-    return ret;
+    return ret
   },
 
 
@@ -40,11 +40,10 @@ var utils = {
    */
   forEach: function (arr, fn, opt_context) {
     if (ap.forEach && arr.forEach === ap.forEach) {
-      arr.forEach(fn, opt_context);
+      arr.forEach(fn, opt_context)
     } else if (arr.length === +arr.length) {
       for (var i = 0, length = arr.length; i < length; i++) {
-        if (fn.call(opt_context, arr[i], i, arr) === breaker)
-          return;
+        fn.call(opt_context, arr[i], i, arr)
       }
     }
   },
@@ -62,7 +61,7 @@ var utils = {
    * @return {NodeList}
    */
   scripts: function () {
-      return doc.getElementsByTagName('script')
+    return doc.getElementsByTagName('script')
   },
 
 
@@ -87,29 +86,29 @@ var utils = {
       }
 
       var scripts = utils.scripts(),
-        script, i,
-        len = scripts.length;
+          script, i,
+          len = scripts.length;
 
       // for older IEs do not support currentScript
       for (i = 0; i < len; ++i) {
         script = scripts[i];
         if (script.readyState === 'interactive') {
           utils.interactiveScript = script;
-          return script;
+          return script
         }
       }
 
       // At last, I check for the src attribute
       for (i = 0; i < len; ++i) {
         script = scripts[i];
-		var src = script.getAttribute('src');
+        var src = script.getAttribute('src');
         if (/\bace(?:\.(?:src|min))?\.js$/.test(src)) {
           utils.interactiveScript = script;
-          return script;
+          return script
         }
       }
 
-      return null;
+      return null
 
     })();
   }
