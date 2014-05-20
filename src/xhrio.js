@@ -88,7 +88,7 @@ var xhrio = {
       xhr.send(null);
     } catch (ex) {}
 
-    if (xhr.status === xhrio.STATUSCODE.OK) {
+    if (xhr.status === xhrio.STATUSCODE.OK || (url.indexOf("file:") === 0 && xhr.response !== "")) {
       callback.call(context, xhr.responseText)
     } else {
       throw Error('failed fetch module at: ' + url + ' ' + xhr.statusText);
